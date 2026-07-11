@@ -26,7 +26,10 @@ export const EXPLOIT_RULES: ExploitRule[] = [
         ruleId: 'VEILO-001', title: 'SQL Injection Risk',
         description: 'String formatting or concatenation used to build SQL query.',
         severity: 'CRITICAL',
-        pattern: '(?:execute|cursor\\.execute|query|raw)\\s*\\(\\s*[\'"].*?[\'"].*?%|f[\'"].*?SELECT|f[\'"].*?INSERT|f[\'"].*?UPDATE|f[\'"].*?DELETE',
+        // f-string branch requires an actual SQL clause pair (SELECT…FROM etc.), not a lone keyword —
+        // otherwise ordinary words like "updated"/"deleted"/"selected" (which contain UPDATE/DELETE/SELECT)
+        // trip it. Keywords are \b-anchored so substrings inside longer words no longer match.
+        pattern: '(?:execute|cursor\\.execute|query|raw)\\s*\\(\\s*[\'"].*?[\'"].*?%|f[\'"][^\'"]*\\b(?:SELECT\\b[^\'"]*\\bFROM|INSERT\\b[^\'"]*\\bINTO|UPDATE\\b[^\'"]*\\bSET|DELETE\\b[^\'"]*\\bFROM)\\b',
         flags: 'gi',
         cwe: 'CWE-89', advice: 'Use parameterized queries or an ORM instead of string formatting.',
     },
